@@ -1,9 +1,5 @@
-process.env['NODE_CONFIG_DIR'] = __dirname + '/configs';
-
 import 'reflect-metadata';
-import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import config from 'config';
 import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
@@ -12,59 +8,60 @@ import compression from 'compression';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import { createConnection } from 'typeorm';
-import { dbConnection } from '@databases';
-import { Routes } from '@interfaces/routes.interface';
+import { getTypeormConfig } from '@databases';
 import errorMiddleware from '@middlewares/error.middleware';
 import { logger, stream } from '@utils/logger';
+import { IEnv } from '@/configs/env';
+import IndexRoute from '@routes/index.route';
+import UsersRoute from '@routes/users.route';
+import AuthRoute from '@routes/auth.route';
 
 class App {
   public app: express.Application;
-  public port: string | number;
-  public env: string;
+  public env: IEnv;
 
-  constructor(routes: Routes[]) {
+  constructor(env: IEnv) {
     this.app = express();
-    this.port = process.env.PORT || 3000;
-    this.env = process.env.NODE_ENV || 'development';
+    this.env = env;
 
-    this.env !== 'test' && this.connectToDatabase();
+    this.env.isTest && this.connectToDatabase();
     this.initializeMiddlewares();
-    this.initializeRoutes(routes);
+    this.initializeRoutes();
     this.initializeSwagger();
     this.initializeErrorHandling();
   }
 
   public listen() {
-    this.app.listen(this.port, () => {
+    this.app.listen(this.env.port, () => {
       logger.info(`=================================`);
-      logger.info(`======= ENV: ${this.env} =======`);
-      logger.info(`🚀 App listening on the port ${this.port}`);
+      logger.info(`======= ENV: ${this.env.nodeEnv} =======`);
+      logger.info(`🚀 App listening on the port ${this.env.port}`);
       logger.info(`=================================`);
     });
   }
 
-  public getServer() {
+  public getServer(): express.Application {
     return this.app;
   }
 
-  private connectToDatabase() {
-    createConnection(dbConnection);
+  private async connectToDatabase(): Promise<void> {
+    await createConnection(getTypeormConfig(this.env));
   }
 
   private initializeMiddlewares() {
-    this.app.use(morgan(config.get('log.format'), { stream }));
-    this.app.use(cors({ origin: config.get('cors.origin'), credentials: config.get('cors.credentials') }));
+    this.app.use(morgan(this.env.logFormat, { stream }));
+    this.app.use(cors({ origin: true, credentials: true }));
     this.app.use(hpp());
     this.app.use(helmet());
     this.app.use(compression());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(cookieParser());
   }
 
-  private initializeRoutes(routes: Routes[]) {
+  private initializeRoutes() {
+    const routes = [new IndexRoute(), new UsersRoute(), new AuthRoute()];
     routes.forEach(route => {
-      this.app.use('/', route.router);
+      this.app.use(`${route.path}`, route.router);
     });
   }
 

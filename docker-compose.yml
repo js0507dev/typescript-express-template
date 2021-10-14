@@ -26,18 +26,18 @@ services:
     networks:
       - backend
     links:
-      - pg
+      - mysql
     depends_on:
-      - pg
-  pg:
-    image: bitnami/postgresql:11-debian-9
-    container_name: pg
+      - mysql
+  mysql:
+    image: mysql:latest
+    container_name: mysql
     environment:
       POSTGRESQL_USERNAME: root
       POSTGRESQL_PASSWORD: password
-      POSTGRESQL_DATABASE: typeorm
+      POSTGRESQL_DATABASE: js
     ports:
-      - '5432:5432'
+      - '3306:3306'
     networks:
       - backend
 

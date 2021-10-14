@@ -22,6 +22,7 @@
     "baseUrl": "src",
     "paths": {
       "@/*": ["*"],
+      "@configs/*": ["configs/*"],
       "@controllers/*": ["controllers/*"],
       "@databases": ["databases"],
       "@dtos/*": ["dtos/*"],
@@ -31,7 +32,8 @@
       "@middlewares/*": ["middlewares/*"],
       "@routes/*": ["routes/*"],
       "@services/*": ["services/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@tests/*": ["tests/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.json", ".env"],
